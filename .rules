@@ -1,0 +1,14 @@
+apps/web design:
+
+UI Framework: React + Next.js
+UI library: ui.shadcn.com + Tailwind CSS
+Authentication: Clerk
+Database: Supabase
+Hosting: Vercel
+State management: React Query
+Search: PostgreSQL fulltext search
+Payment: Mock for now.
+NodeJs Server: Fastify
+
+(Later)
+Messaging: https://ably.com/pricing
