@@ -1,5 +1,3 @@
 {
-  "installCommand": "cd ../.. && pnpm install --filter=api...",
-  "buildCommand": "cd ../.. && pnpm --filter=@kontaktar/database --filter=@repo/logger build",
-  "framework": null
+  "installCommand": "cd ../.. && pnpm install --filter=api... && pnpm --filter=@kontaktar/database --filter=@repo/logger build"
 }
