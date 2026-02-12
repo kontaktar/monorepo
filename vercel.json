@@ -1,19 +1,16 @@
 {
   "version": 2,
-  "buildCommand": "turbo build",
-  "builds": [
+  "buildCommand": "pnpm install && pnpm run build --filter=api",
+  "installCommand": "pnpm install",
+  "rewrites": [
     {
-      "src": "apps/api/dist/vercel.cjs",
-      "use": "@vercel/node"
+      "source": "/(.*)",
+      "destination": "/api"
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "apps/api/dist/vercel.cjs"
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
     }
-  ],
-  "env": {
-    "TURBO_TELEMETRY_DISABLED": "1"
   }
 }
