@@ -1,0 +1,4 @@
+{
+  "installCommand": "cd ../.. && pnpm install --filter=api...",
+  "buildCommand": "cd ../.. && pnpm --filter=@kontaktar/database build"
+}
