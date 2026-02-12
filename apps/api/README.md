@@ -1,247 +1,177 @@
 # Kontaktar API
 
-A modern Fastify-based API for the Kontaktar service marketplace, built with TypeScript and designed to run both locally and on Vercel serverless functions.
+A Fastify-based REST API for the Kontaktar service marketplace, deployed on Vercel.
 
-## Features
+## Overview
 
-- 🚀 **Fast Development**: Hot-reload with `tsx watch`
-- 📦 **Modern Stack**: Fastify v5, TypeScript, ESM modules
-- 📚 **Auto Documentation**: Swagger/OpenAPI UI built-in
-- 🔒 **Type Safety**: TypeBox schema validation
-- 🌐 **CORS Enabled**: Configurable CORS support
-- 📊 **Structured Logging**: Pino with pretty printing in dev
-- ☁️ **Vercel Ready**: Serverless function adapter included
+This API uses:
+- **Framework**: Fastify
+- **Language**: TypeScript
+- **Hosting**: Vercel (serverless)
+- **Database**: Supabase (PostgreSQL)
+- **Documentation**: Swagger/OpenAPI
 
-## Quick Start
+## Local Development
 
 ### Prerequisites
 
-- Node.js >= 18
-- pnpm >= 8
+- Node.js 18+
+- pnpm 8+
 
-### Environment Variables
+### Setup
 
-Create a `.env` file in the project root with:
-
-```env
-NEXT_PUBLIC_SUPABASE_PROJECT_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE=your_supabase_anon_key
-PORT=5001
-NODE_ENV=development
+1. Install dependencies from the monorepo root:
+```bash
+pnpm install
 ```
 
-### Development
-
-Run the API in watch mode with hot-reload:
-
+2. Create a `.env` file in the monorepo root with required environment variables:
 ```bash
-# From the monorepo root
-turbo dev --filter=api
+NEXT_PUBLIC_SUPABASE_PROJECT_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE=your_supabase_key
+PORT=5001
+```
 
-# Or directly in the api directory
-cd apps/api
+3. Start the development server:
+```bash
 pnpm dev
 ```
 
 The API will be available at:
-- 🌐 **API**: http://localhost:5001
-- 📚 **Documentation**: http://localhost:5001/documentation
-- 🏥 **Health Check**: http://localhost:5001/health
-
-### Build
-
-Build the API for production:
-
-```bash
-# From the monorepo root
-turbo build --filter=api
-
-# Or directly in the api directory
-cd apps/api
-pnpm build
-```
-
-### Production
-
-Run the built API:
-
-```bash
-pnpm start
-```
-
-## API Endpoints
-
-### Root
-- `GET /` - API information and status
-
-### Health
-- `GET /health` - Health check with uptime
-
-### Documentation
-- `GET /documentation` - Interactive Swagger UI
-
-### Users
-- `GET /api/users/me` - Get current authenticated user (requires auth)
-- `GET /api/users/:userId` - Get user by ID
-- `PATCH /api/users/:userId` - Update user
-- `GET /api/users` - List all users (admin only)
+- API: http://localhost:5001
+- Documentation: http://localhost:5001/documentation
+- Health Check: http://localhost:5001/health
 
 ## Project Structure
 
 ```
 apps/api/
 ├── src/
-│   ├── index.ts          # Entry point for local dev
-│   ├── server.ts         # Fastify server setup & Vercel handler
+│   ├── index.ts          # Local development entry point
+│   ├── server.ts         # Main Fastify server (Vercel entry point)
 │   └── routes/
-│       └── users.ts      # User endpoints
-├── dist/                 # Build output (ESM)
+│       └── users.ts      # User routes
 ├── package.json
 ├── tsconfig.json
-└── tsup.config.ts        # Build configuration
+└── vercel.json          # Vercel configuration
 ```
 
-## Technology Stack
+## Deployment to Vercel
 
-- **Framework**: [Fastify](https://fastify.dev) v5
-- **Language**: TypeScript with ES Modules
-- **Validation**: [TypeBox](https://github.com/sinclairzx81/typebox) with Fastify Type Provider
-- **Build Tool**: [tsup](https://tsup.egoist.dev) (powered by esbuild)
-- **Dev Runner**: [tsx](https://github.com/privatenumber/tsx)
-- **Database**: Supabase (via `@kontaktar/database` package)
-- **Docs**: Fastify Swagger & Swagger UI
-- **Logging**: Pino (with pino-pretty in dev)
+### How it Works
 
-## Scripts
+Vercel automatically detects and deploys Fastify applications by looking for entry point files named:
+- `server.ts` / `server.js`
+- `index.ts` / `index.js`
+- `app.ts` / `app.js`
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start development server with hot-reload |
-| `pnpm build` | Build for production |
-| `pnpm start` | Run production build |
-| `pnpm check-types` | Type check without building |
-| `pnpm lint` | Lint source code |
-| `pnpm test` | Run tests |
+In the root or `src/` directory.
 
-## Vercel Deployment
+Our API uses `src/server.ts` as the entry point, which Vercel automatically detects and converts to a serverless function.
 
-The API includes a serverless handler for Vercel deployment. The `handler` function exported from `server.ts` is used by Vercel serverless functions located in `/api` directory at the project root.
+### Key Points
 
-### Build Command
+1. **No Build Step Required**: Vercel handles TypeScript compilation automatically
+2. **Workspace Dependencies**: The `vercel.json` configures installation of monorepo dependencies
+3. **TypeScript Source Files**: The API and its dependencies (`@kontaktar/database`) use `.ts` files directly
+4. **Serverless**: The entire Fastify app becomes a single Vercel Function
+
+### Deployment Steps
+
+1. **Link the project** (first time only):
 ```bash
-turbo build --filter=api
+vercel link
+```
+
+2. **Deploy to preview**:
+```bash
+vercel
+```
+
+3. **Deploy to production**:
+```bash
+vercel --prod
 ```
 
 ### Environment Variables
+
 Set these in your Vercel project settings:
-- `NEXT_PUBLIC_SUPABASE_PROJECT_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE`
-- `CLERK_SECRET_KEY`
-- `CLERK_SECRET_ADMIN_KEY`
-- `NODE_ENV`
 
-## Development Tips
+- `NEXT_PUBLIC_SUPABASE_PROJECT_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE` - Supabase publishable key
+- `CORS_ORIGIN` - Allowed CORS origins (optional)
+- `LOG_LEVEL` - Logging level (optional, default: "info")
 
-### Hot Reload
-The dev server uses `tsx watch` which automatically restarts on file changes. No need to manually restart!
+## API Endpoints
 
-### Logging
-- **Development**: Pretty-printed, colorized logs
-- **Production**: JSON-formatted logs for parsing
+### Root
+- `GET /` - API information
 
-### Testing Endpoints
+### Health
+- `GET /health` - Health check endpoint
 
-Using curl:
-```bash
-# Root endpoint
-curl http://localhost:5001/
+### Users
+- `GET /api/users/:id` - Get user by ID
+- `PUT /api/users/:id` - Update user
 
-# Health check
-curl http://localhost:5001/health
+### Documentation
+- `GET /documentation` - Interactive Swagger UI
 
-# User endpoint (will return 401 without auth)
-curl http://localhost:5001/api/users/me
-```
+## Monorepo Structure
 
-Using the test script:
-```bash
-# From project root
-node test-api.js http://localhost:5001
-```
+This API is part of a pnpm monorepo and depends on:
 
-### Database Integration
+- `@kontaktar/database` - Database client and utilities
+- `@repo/logger` - Shared logging utilities
 
-The API uses the `@kontaktar/database` workspace package which provides:
-- `getUserById(userId)` - Fetch user by ID
-- `updateUser(userId, updates)` - Update user profile
-- `getCurrentUser()` - Get authenticated user
+These workspace packages are automatically resolved during deployment thanks to the `vercel.json` configuration:
 
-The Supabase client is lazy-initialized, so environment variables must be set before the first database call.
-
-## Adding New Routes
-
-1. Create a new route file in `src/routes/`:
-
-```typescript
-import { FastifyInstance } from "fastify";
-import { Type } from "@sinclair/typebox";
-
-export default async function myRoutes(fastify: FastifyInstance) {
-  fastify.get("/my-endpoint", {
-    schema: {
-      description: "My endpoint description",
-      tags: ["my-tag"],
-      response: {
-        200: Type.Object({
-          message: Type.String(),
-        }),
-      },
-    },
-    handler: async () => {
-      return { message: "Hello!" };
-    },
-  });
+```json
+{
+  "installCommand": "cd ../.. && pnpm install --filter=api..."
 }
 ```
 
-2. Register the route in `src/server.ts`:
-
-```typescript
-import myRoutes from "./routes/my-routes.js";
-
-// In createServer():
-await server.register(myRoutes, { prefix: "/api/my-route" });
-```
+This ensures that:
+1. pnpm installs from the monorepo root
+2. The `--filter=api...` flag installs the API and all its dependencies (including workspace packages)
+3. Workspace packages are properly linked
 
 ## Troubleshooting
 
-### Port Already in Use
-If port 5001 is already in use, set a different port:
-```bash
-PORT=5002 pnpm dev
-```
-
-### Environment Variables Not Loading
-Make sure the `.env` file is in the **project root** (not in `apps/api/`).
-
 ### Module Not Found Errors
-Ensure all workspace dependencies are installed:
+
+If you see errors like `Cannot find module '@kontaktar/database'`:
+
+1. Ensure workspace packages are properly configured in `pnpm-workspace.yaml`
+2. Check that `@kontaktar/database` package.json points to source files (not built files)
+3. Verify the `vercel.json` install command includes `--filter=api...`
+
+### Import Resolution
+
+- Use imports without `.js` extensions: `import { foo } from "./bar"`
+- TypeScript's `moduleResolution: "Bundler"` handles this correctly
+- Vercel's TypeScript compiler handles the resolution during build
+
+## Testing
+
+Run tests with:
 ```bash
-pnpm install
+pnpm test
 ```
 
-### Supabase Connection Errors
-Check that your Supabase environment variables are correctly set and the project is accessible.
+Type checking:
+```bash
+pnpm check-types
+```
 
-## Contributing
+Linting:
+```bash
+pnpm lint
+```
 
-When adding new features:
-1. Add TypeBox schemas for request/response validation
-2. Include OpenAPI documentation in route schemas
-3. Handle errors gracefully with appropriate status codes
-4. Add logging for debugging
-5. Update this README if needed
+## Resources
 
-## License
-
-Private - Kontaktar Project
+- [Vercel Fastify Documentation](https://vercel.com/docs/frameworks/backend/fastify)
+- [Fastify Documentation](https://fastify.dev)
+- [Supabase Documentation](https://supabase.com/docs)
