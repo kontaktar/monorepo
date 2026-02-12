@@ -4,7 +4,7 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 
 // Import routes
-import userRoutes from "./routes/users";
+import userRoutes from "./routes/users.js";
 
 const fastify = Fastify({
   logger: {
