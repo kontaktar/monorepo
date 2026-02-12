@@ -1,3 +1,0 @@
-{
-  "installCommand": "cd ../.. && pnpm install --filter=api... && pnpm --filter=@kontaktar/database --filter=@repo/logger build"
-}
