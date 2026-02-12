@@ -1,33 +1,36 @@
 import { FastifyInstance } from "fastify";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
-import { getUserById, updateUser, isAdmin, User } from "@kontaktar/database";
+import { getUserById, updateUser } from "@kontaktar/database";
 
-// Define schemas for request/response validation
+// Schema definitions
 const UserSchema = Type.Object({
-  id: Type.String({ format: 'uuid' }),
+  id: Type.String({ format: "uuid" }),
   phone_number: Type.Union([Type.String(), Type.Null()]),
   display_name: Type.Union([Type.String(), Type.Null()]),
-  role: Type.Union([Type.Literal('user'), Type.Literal('admin')]),
-  created_at: Type.String({ format: 'date-time' })
+  role: Type.Union([Type.Literal("user"), Type.Literal("admin")]),
+  created_at: Type.String({ format: "date-time" }),
 });
 
 const UserUpdateSchema = Type.Object({
-  display_name: Type.Optional(Type.String())
+  display_name: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
 });
 
-const UserParams = Type.Object({
-  userId: Type.String({ format: 'uuid' })
+const UserIdParams = Type.Object({
+  userId: Type.String({ format: "uuid" }),
 });
 
 const ErrorResponse = Type.Object({
   statusCode: Type.Number(),
   error: Type.String(),
-  message: Type.String()
+  message: Type.String(),
+});
+
+const SuccessResponse = Type.Object({
+  message: Type.String(),
 });
 
 export default async function userRoutes(fastify: FastifyInstance) {
-  // Use TypeBox for validation
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
   // Get current authenticated user
@@ -35,32 +38,23 @@ export default async function userRoutes(fastify: FastifyInstance) {
     "/me",
     {
       schema: {
+        description: "Get the current authenticated user",
+        tags: ["users"],
         response: {
           200: UserSchema,
-          401: ErrorResponse
-        }
-      }
+          401: ErrorResponse,
+        },
+      },
     },
     async (request, reply) => {
-      // In a real implementation, this would use Supabase auth
-      // For now, we'll return a mock unauthorized error
+      // TODO: Implement authentication with Clerk
+      // For now, return 401
       return reply.code(401).send({
         statusCode: 401,
         error: "Unauthorized",
-        message: "Authentication required"
+        message: "Authentication required. Please provide a valid token.",
       });
-
-      // The real implementation would look like this:
-      // const user = await getCurrentUser();
-      // if (!user) {
-      //   return reply.code(401).send({
-      //     statusCode: 401,
-      //     error: "Unauthorized",
-      //     message: "Authentication required"
-      //   });
-      // }
-      // return user;
-    }
+    },
   );
 
   // Get user by ID
@@ -68,98 +62,126 @@ export default async function userRoutes(fastify: FastifyInstance) {
     "/:userId",
     {
       schema: {
-        params: UserParams,
+        description: "Get a user by ID",
+        tags: ["users"],
+        params: UserIdParams,
         response: {
           200: UserSchema,
-          404: ErrorResponse
-        }
-      }
+          404: ErrorResponse,
+          500: ErrorResponse,
+        },
+      },
     },
     async (request, reply) => {
       const { userId } = request.params;
 
-      // In a real implementation, this would check auth and permissions
-      // For now, we'll simulate the database call
-      const user = await getUserById(userId);
+      try {
+        const user = await getUserById(userId);
 
-      if (!user) {
-        return reply.code(404).send({
-          statusCode: 404,
-          error: "Not Found",
-          message: "User not found"
+        if (!user) {
+          return reply.code(404).send({
+            statusCode: 404,
+            error: "Not Found",
+            message: `User with ID ${userId} not found`,
+          });
+        }
+
+        return user;
+      } catch (error) {
+        request.log.error(error, "Error fetching user");
+        return reply.code(500).send({
+          statusCode: 500,
+          error: "Internal Server Error",
+          message: "Failed to fetch user",
         });
       }
-
-      return user;
-    }
+    },
   );
 
   // Update user
   server.patch<{
-    Params: { userId: string },
-    Body: { display_name?: string }
+    Params: { userId: string };
+    Body: { display_name?: string };
   }>(
     "/:userId",
     {
       schema: {
-        params: UserParams,
+        description: "Update a user",
+        tags: ["users"],
+        params: UserIdParams,
         body: UserUpdateSchema,
         response: {
           200: UserSchema,
-          401: ErrorResponse,
-          404: ErrorResponse
-        }
-      }
+          400: ErrorResponse,
+          404: ErrorResponse,
+          500: ErrorResponse,
+        },
+      },
     },
     async (request, reply) => {
       const { userId } = request.params;
       const updates = request.body;
 
-      // In a real implementation, this would:
-      // 1. Check if user is authenticated
-      // 2. Verify they have permission to update this user
+      try {
+        // TODO: Add authentication check
+        // TODO: Verify user has permission to update this user
 
-      // For now, we'll simulate the database call
-      const updatedUser = await updateUser(userId, updates);
+        if (!updates.display_name) {
+          return reply.code(400).send({
+            statusCode: 400,
+            error: "Bad Request",
+            message: "No update data provided",
+          });
+        }
 
-      if (!updatedUser) {
-        return reply.code(404).send({
-          statusCode: 404,
-          error: "Not Found",
-          message: "User not found or update failed"
+        const updatedUser = await updateUser(userId, updates);
+
+        if (!updatedUser) {
+          return reply.code(404).send({
+            statusCode: 404,
+            error: "Not Found",
+            message: `User with ID ${userId} not found or update failed`,
+          });
+        }
+
+        return updatedUser;
+      } catch (error) {
+        request.log.error(error, "Error updating user");
+        return reply.code(500).send({
+          statusCode: 500,
+          error: "Internal Server Error",
+          message: "Failed to update user",
         });
       }
-
-      return updatedUser;
-    }
+    },
   );
 
-  // Admin-only: Get all users
+  // List all users (admin only)
   server.get(
     "/",
     {
       schema: {
+        description: "Get all users (admin only)",
+        tags: ["users"],
         response: {
-          200: Type.Array(UserSchema),
+          200: Type.Object({
+            users: Type.Array(UserSchema),
+            total: Type.Number(),
+          }),
           401: ErrorResponse,
-          403: ErrorResponse
-        }
-      }
+          403: ErrorResponse,
+        },
+      },
     },
     async (request, reply) => {
-      // In a real implementation, this would:
-      // 1. Check if user is authenticated
-      // 2. Check if user is an admin
+      // TODO: Implement authentication
+      // TODO: Check if user is admin
 
-      // For demonstration, we'll return a forbidden error
       return reply.code(403).send({
         statusCode: 403,
         error: "Forbidden",
-        message: "Admin access required"
+        message: "Admin access required",
       });
-
-      // The real implementation would query the database for all users
-      // and return the results if the requester is an admin
-    }
+    },
   );
 }

@@ -1,28 +1,44 @@
 import dotenv from "dotenv";
-import path from "path";
-import { log } from "@repo/logger";
-import { createServer } from "./server";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { createServer } from "./server.js";
+
+// Get directory paths
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Load environment variables from root .env file
-dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+dotenv.config({ path: join(__dirname, "../../../.env") });
 
-const port = process.env.PORT || 5001;
+const PORT = parseInt(process.env.PORT || "5001", 10);
+const HOST = process.env.HOST || "0.0.0.0";
 
-async function startServer() {
+async function start() {
   try {
     const server = await createServer();
 
-    await server.listen({ port: Number(port), host: "0.0.0.0" });
+    // Start listening
+    await server.listen({ port: PORT, host: HOST });
 
-    log(`API server running on http://localhost:${port}`);
-    log(
-      `Swagger documentation available at http://localhost:${port}/documentation`,
-    );
+    console.log(`
+🚀 Server ready at: http://localhost:${PORT}
+📚 Documentation: http://localhost:${PORT}/documentation
+🏥 Health check: http://localhost:${PORT}/health
+    `);
+
+    // Graceful shutdown
+    const signals = ["SIGINT", "SIGTERM"];
+    for (const signal of signals) {
+      process.on(signal, async () => {
+        console.log(`\n${signal} received, closing server...`);
+        await server.close();
+        process.exit(0);
+      });
+    }
   } catch (err) {
-    log("Failed to start server:", err);
+    console.error("Error starting server:", err);
     process.exit(1);
   }
 }
 
-// Start the server
-startServer();
+start();

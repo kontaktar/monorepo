@@ -1,13 +1,7 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import type { WebhookEvent } from "@clerk/backend";
-import { createClient } from "@supabase/supabase-js";
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_URL || "";
-const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE || "";
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { supabase } from "@kontaktar/database";
 
 export async function POST(req: Request) {
   // Get the headers
@@ -27,6 +21,11 @@ export async function POST(req: Request) {
 
   // Create a new Svix instance with your webhook secret
   const webhookSecret = process.env.CLERK_SECRET_KEY || "";
+
+  if (!webhookSecret) {
+    console.error("Missing CLERK_SECRET_KEY");
+    return new Response("Webhook configuration error", { status: 500 });
+  }
 
   let evt: WebhookEvent;
 
@@ -68,8 +67,8 @@ export async function POST(req: Request) {
           ? email_addresses[0].email_address
           : null;
 
-      // Insert user into Supabase
-      const { data, error } = await supabase.from("users").insert({
+      // Insert user into Supabase using shared database package
+      const { data, error } = await supabase.client.from("users").insert({
         id,
         phone_number: phoneNumber,
         email: email,
@@ -86,6 +85,7 @@ export async function POST(req: Request) {
         });
       }
 
+      console.log(`User created successfully: ${id}`);
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -114,8 +114,8 @@ export async function POST(req: Request) {
           ? email_addresses[0].email_address
           : null;
 
-      // Update user in Supabase
-      const { data, error } = await supabase
+      // Update user in Supabase using shared database package
+      const { data, error } = await supabase.client
         .from("users")
         .update({
           phone_number: phoneNumber,
@@ -132,6 +132,7 @@ export async function POST(req: Request) {
         });
       }
 
+      console.log(`User updated successfully: ${id}`);
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -153,7 +154,7 @@ export async function POST(req: Request) {
 
       // If you want to actually delete the user, uncomment this:
       /*
-      const { error } = await supabase
+      const { error } = await supabase.client
         .from("users")
         .delete()
         .eq("id", id);
@@ -167,6 +168,7 @@ export async function POST(req: Request) {
       }
       */
 
+      console.log(`User deleted event received: ${id}`);
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -181,6 +183,7 @@ export async function POST(req: Request) {
   }
 
   // Return a 200 response for other event types
+  console.log(`Unhandled webhook event type: ${eventType}`);
   return new Response(JSON.stringify({ received: true }), {
     status: 200,
     headers: { "Content-Type": "application/json" },

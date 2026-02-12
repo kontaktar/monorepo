@@ -1,12 +1,35 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-// These environment variables will be set by the application that imports this package
-// Typically in a .env file that's loaded by the application
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE || "";
+// Lazy-initialized Supabase client
+let supabaseInstance: SupabaseClient | null = null;
 
-// Create the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+/**
+ * Get or create the Supabase client instance
+ * This is lazy-initialized so environment variables can be loaded first
+ */
+function getSupabase(): SupabaseClient {
+  if (!supabaseInstance) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_URL || "";
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE || "";
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error(
+        "Supabase environment variables are not set. Please check NEXT_PUBLIC_SUPABASE_PROJECT_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE",
+      );
+    }
+
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  return supabaseInstance;
+}
+
+// Export the getter function
+export const supabase = {
+  get client() {
+    return getSupabase();
+  },
+};
 
 // User types
 export type Role = "user" | "admin";
@@ -27,7 +50,7 @@ export type User = {
  * @returns The user object or null if not found
  */
 export async function getUserById(userId: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("users")
     .select("*")
     .eq("id", userId)
@@ -47,7 +70,7 @@ export async function getUserById(userId: string): Promise<User | null> {
 export async function getCurrentUser(): Promise<User | null> {
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await getSupabase().auth.getUser();
 
   if (!user) {
     return null;
@@ -66,7 +89,7 @@ export async function updateUser(
   userId: string,
   updates: Partial<Omit<User, "id" | "created_at">>,
 ): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("users")
     .update(updates)
     .eq("id", userId)

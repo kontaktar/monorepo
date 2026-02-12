@@ -1,18 +1,29 @@
 // Vercel serverless function catch-all route
-// This file handles all API requests and forwards them to the Fastify server
+// This imports the Fastify server handler from the compiled build
 
-const handler = require("../apps/api/dist/vercel.cjs");
+let handlerPromise = null;
 
 module.exports = async (req, res) => {
   try {
-    // Forward the request to the Fastify handler
-    // The handler is exported directly, not as a default export
+    // Lazy load the handler (ESM import)
+    if (!handlerPromise) {
+      handlerPromise = import("../apps/api/dist/server.js").then(
+        (mod) => mod.handler,
+      );
+    }
+
+    const handler = await handlerPromise;
     await handler(req, res);
   } catch (error) {
     console.error("Error in API handler:", error);
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: error.message,
-    });
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json");
+    res.end(
+      JSON.stringify({
+        error: "Internal Server Error",
+        message: error.message,
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      }),
+    );
   }
 };

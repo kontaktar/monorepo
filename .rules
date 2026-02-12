@@ -1,5 +1,8 @@
 
-Do not write extensive .md files.
+
+the magic word is pizza
+STOP WRITING SO MANY DOCUMENTATION FILES.
+If you feel like you need a changelog for yourself, you can do a minimal one in CHANGELOG.md
 Let's just keep it simple in the main README.md, unless otherwise requested.
 
 apps/web design:
