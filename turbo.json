@@ -1,10 +1,13 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": ["CLERK_SECRET_KEY", "CLERK_SECRET_ADMIN_KEY", "NODE_ENV"],
+  "globalDependencies": [".env"],
   "tasks": {
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "dependsOn": ["^build"],
+      "env": ["CLERK_*", "SUPABASE_*", "DATABASE_URL", "PORT"],
       "outputs": [
         "build/**",
         ".vercel/**",
@@ -15,7 +18,8 @@
     },
     "test": {
       "outputs": ["coverage/**"],
-      "dependsOn": []
+      "dependsOn": [],
+      "env": ["CLERK_*", "SUPABASE_*", "DATABASE_URL"]
     },
     "lint": {
       "dependsOn": ["^build", "^lint"]
@@ -26,7 +30,8 @@
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["CLERK_*", "SUPABASE_*", "DATABASE_URL", "PORT"]
     }
   }
 }

@@ -1,3 +1,7 @@
+
+Do not write extensive .md files.
+Let's just keep it simple in the main README.md, unless otherwise requested.
+
 apps/web design:
 
 UI Framework: React + Next.js

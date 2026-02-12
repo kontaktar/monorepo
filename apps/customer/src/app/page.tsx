@@ -56,7 +56,7 @@ export default async function Home() {
             </h1>
             <p className="text-xl text-gray-600 mb-10">
               Connect with skilled professionals in Iceland for any job, big or
-              small. From plumbers to photographers, we've got you covered.
+              small. From plumbers to photographers, we&apos;ve got you covered.
             </p>
 
             {/* Search Bar */}
@@ -252,7 +252,7 @@ export default async function Home() {
             <div>
               <h3 className="text-white font-bold text-lg mb-4">Kontaktar</h3>
               <p className="text-sm">
-                Connecting Iceland's best service providers with customers.
+                Connecting Iceland&apos;s best service providers with customers.
               </p>
             </div>
             <div>
