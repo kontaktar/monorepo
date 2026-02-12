@@ -6,6 +6,13 @@ import swaggerUi from "@fastify/swagger-ui";
 // Import routes
 import userRoutes from "./routes/users.js";
 
+console.log("🚀 Initializing Fastify server...");
+console.log("Environment:", {
+  NODE_ENV: process.env.NODE_ENV,
+  VERCEL: process.env.VERCEL,
+  VERCEL_ENV: process.env.VERCEL_ENV,
+});
+
 const fastify = Fastify({
   logger: {
     level: process.env.LOG_LEVEL || "info",
@@ -24,12 +31,15 @@ const fastify = Fastify({
 });
 
 // Register CORS
+console.log("📡 Registering CORS...");
 await fastify.register(cors, {
   origin: process.env.CORS_ORIGIN || true,
   credentials: true,
 });
+console.log("✅ CORS registered");
 
 // Register Swagger
+console.log("📚 Registering Swagger...");
 await fastify.register(swagger, {
   openapi: {
     info: {
@@ -53,6 +63,7 @@ await fastify.register(swaggerUi, {
     deepLinking: false,
   },
 });
+console.log("✅ Swagger registered");
 
 // Root endpoint
 fastify.get("/", {
@@ -103,13 +114,21 @@ fastify.get("/health", {
 });
 
 // Register API routes
+console.log("🔌 Registering routes...");
 await fastify.register(userRoutes, { prefix: "/api/users" });
+console.log("✅ Routes registered");
 
 // Export for local development
 export default fastify;
 
-// Start listening (Vercel will handle this in production)
-const PORT = parseInt(process.env.PORT || "3000", 10);
-const HOST = process.env.HOST || "0.0.0.0";
+// Start listening only when not running on Vercel
+// Vercel automatically handles the server binding
+if (!process.env.VERCEL) {
+  console.log("🏠 Running locally - starting server...");
+  const PORT = parseInt(process.env.PORT || "3000", 10);
+  const HOST = process.env.HOST || "0.0.0.0";
 
-fastify.listen({ port: PORT, host: HOST });
+  fastify.listen({ port: PORT, host: HOST });
+} else {
+  console.log("☁️  Running on Vercel - server ready for requests");
+}
