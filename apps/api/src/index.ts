@@ -17,7 +17,7 @@ const PORT = process.env.PORT;
 const HOST = process.env.HOST;
 
 // Import the server (this will start it automatically)
-const { default: fastify } = await import("./server.js");
+const { default: fastify } = await import("../server.js");
 
 console.log(`
 🚀 Server ready at: http://localhost:${PORT}

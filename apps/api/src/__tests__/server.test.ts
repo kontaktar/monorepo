@@ -1,6 +1,6 @@
 import supertest from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "@jest/globals";
-import fastify from "../server";
+import fastify from "../../server";
 
 describe("Server", () => {
   beforeAll(async () => {
